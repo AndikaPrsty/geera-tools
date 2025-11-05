@@ -6,7 +6,7 @@ export class OctokitService {
   client: Octokit;
 
   constructor() {
-    this.client = new Octokit({auth: process.env.GITHUB_API_TOKEN})
+    this.client = new Octokit({auth: process.env.GITHUB_TOKEN})
   }
 }
 
