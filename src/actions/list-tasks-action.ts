@@ -22,31 +22,31 @@ type StatusDuration = {
 
 const onCheckPullRequest = async (ticketId = "", pulls: Pull[]) => {
   try {
-    const jiraRepo = new JQLApiRepository();
+    // const jiraRepo = new JQLApiRepository();
     const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticketId+'\\b')))
     if (pullFiltered.length) {
       await handleCodeReviewTicket(ticketId)
-      const messagePayload = {
-        content: "@here Hi everyone! Please review these PRs.",
-        username: "Budak Faridho",
-        embeds: [
-          {
-            title: "New Open Pull Requests",
-            description: pullFiltered[0].title,
-            color: 3066993,
-            fields: pullFiltered.map(pull => {
-              const splitTitle = pull.title.split("-");
-
-              return {
-                name: splitTitle[splitTitle.length - 1].trim(),
-                value: pull._links.html.href,
-                inline: false
-              }
-            })
-          }
-        ]
-      }
-      await jiraRepo.sendDiscordWebhook(JSON.stringify(messagePayload));
+      // const messagePayload = {
+      //   content: "@here Hi everyone! Please review these PRs.",
+      //   username: "Budak Faridho",
+      //   embeds: [
+      //     {
+      //       title: "New Open Pull Requests",
+      //       description: pullFiltered[0].title,
+      //       color: 3066993,
+      //       fields: pullFiltered.map(pull => {
+      //         const splitTitle = pull.title.split("-");
+      //
+      //         return {
+      //           name: splitTitle[splitTitle.length - 1].trim(),
+      //           value: pull._links.html.href,
+      //           inline: false
+      //         }
+      //       })
+      //     }
+      //   ]
+      // }
+      // await jiraRepo.sendDiscordWebhook(JSON.stringify(messagePayload));
       return true
     }
     return false
