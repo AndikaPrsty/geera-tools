@@ -20,11 +20,11 @@ type StatusDuration = {
   diff: any
 }
 
-const onCheckPullRequest = async (ticketId = "", pulls: Pull[]) => {
+const onCheckPullRequest = async (ticketId = "", pulls: Pull[], isExceed = false) => {
   try {
     // const jiraRepo = new JQLApiRepository();
     const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticketId+'\\b')))
-    if (pullFiltered.length) {
+    if (pullFiltered.length || isExceed) {
       await handleCodeReviewTicket(ticketId)
       // const messagePayload = {
       //   content: "@here Hi everyone! Please review these PRs.",
@@ -73,9 +73,9 @@ const handleCodeReviewTicket = async (ticketId = "") => {
   }
 }
 
-const handleHoldticket = async (ticketId = "", pulls: Pull[] = []) => {
+const handleHoldticket = async (ticketId = "", pulls: Pull[] = [], isExceed = false) => {
   try {
-    const isCodeReview = onCheckPullRequest(ticketId, pulls);
+    const isCodeReview = onCheckPullRequest(ticketId, pulls, isExceed);
     const jiraRepo = new JQLApiRepository();
     const statuses = await jiraRepo.getTransitionByTicketId(ticketId)
     const onHoldId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/hold/)).id
@@ -182,7 +182,8 @@ export async function listTaskActions(args: listTaskActionParams) {
         Duration: durationReadeble,
         Durations: statusDurations2,
         Link: "https://lionparcel.atlassian.net/browse/"+issue.key,
-        Type: issue.fields.issuetype.name
+        Type: issue.fields.issuetype.name,
+        ActualStoryPoint: issue.fields.customfield_10024 || 0
       }
     })
 
@@ -203,13 +204,13 @@ export async function listTaskActions(args: listTaskActionParams) {
 
       const isEstimationExceeded = column.InProgressDuration >= targetFinish;
 
-      // if (column.Type.toLowerCase().match(/bug/)) {
+      if (!column.ActualStoryPoint) {
         onCheckPullRequest(column.ID, pulls);
-      // }
+      }
 
       if (isEstimationExceeded) {
         notify(column.ID, column.Title + '\n Please Change Your Ticket Status !!!', "critical");
-        handleHoldticket(column.ID, pulls);
+        handleHoldticket(column.ID, pulls, isEstimationExceeded);
       }
 
       if (!notificationIds.has(column.ID)) {
