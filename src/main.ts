@@ -1,3 +1,6 @@
+// Load environment variables from .env at project root as early as possible
+import "dotenv/config";
+
 import { listBugActions } from "./actions/list-bugs-actions.js";
 import { confirm, number, select } from "@inquirer/prompts";
 import { listTaskActions } from "./actions/list-tasks-action.js";

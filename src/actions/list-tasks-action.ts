@@ -236,6 +236,7 @@ export async function listTaskActions(args: listTaskActionParams) {
       }, intervalMs)
     }
   } catch (error) {
+    console.error(error?.message || error);
     retryInterval = setInterval(() => {
       console.clear();
       console.log("Retrying....")
