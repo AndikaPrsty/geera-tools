@@ -3,6 +3,7 @@ import JQLApiRepository from "../repositories/JQLApiRepository.js";
 import { notify } from "../app/notify.js";
 import moment from "moment";
 import { Pull } from "../contracts/Pull.js";
+import { Assignee } from "../contracts/Issues.js";
 
 const notificationIds = new Map<any, any>();
 let retryInterval: any = null;
@@ -20,12 +21,30 @@ type StatusDuration = {
   diff: any
 }
 
-const onCheckPullRequest = async (ticketId = "", pulls: Pull[], isExceed = false) => {
+type TicketColumn = {
+  ID: string
+  Title: string
+  Assignee: Assignee
+  StoryPoint: number
+  Status: string
+  InProgressDuration: number
+  Duration: string
+  Durations: StatusDuration[]
+  Link: string
+  Type: string
+  ActualStoryPoint: number
+}
+
+const onCheckPullRequest = async (ticket: TicketColumn, pulls: Pull[]) => {
   try {
     // const jiraRepo = new JQLApiRepository();
-    const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticketId+'\\b')))
-    if (pullFiltered.length || isExceed) {
-      await handleCodeReviewTicket(ticketId)
+    const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticket.ID+'\\b')))
+    if (pullFiltered.length) {
+      await handleCodeReviewTicket(ticket.ID)
+      if (pullFiltered[0].merged_at && ticket.ActualStoryPoint) {
+        await handleDoneTicket(ticket.ID);
+        return true;
+      }
       // const messagePayload = {
       //   content: "@here Hi everyone! Please review these PRs.",
       //   username: "Budak Faridho",
@@ -73,17 +92,34 @@ const handleCodeReviewTicket = async (ticketId = "") => {
   }
 }
 
-const handleHoldticket = async (ticketId = "", pulls: Pull[] = [], isExceed = false) => {
+const handleDoneTicket = async (ticketId = "") => {
   try {
-    const isCodeReview = onCheckPullRequest(ticketId, pulls, isExceed);
     const jiraRepo = new JQLApiRepository();
     const statuses = await jiraRepo.getTransitionByTicketId(ticketId)
+    const doneId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/done/))?.id
+
+    if (doneId) {
+      await jiraRepo.codeReviewTicket(ticketId, doneId);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("failed to done ticket: ", error);
+    return false;
+  }
+}
+
+const handleHoldticket = async (ticket: TicketColumn, pulls: Pull[] = []) => {
+  try {
+    const isCodeReview = onCheckPullRequest(ticket, pulls);
+    const jiraRepo = new JQLApiRepository();
+    const statuses = await jiraRepo.getTransitionByTicketId(ticket.ID)
     const onHoldId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/hold/)).id
 
     if (isCodeReview) return;
 
     if (onHoldId) {
-      await jiraRepo.holdTicket(ticketId, onHoldId);
+      await jiraRepo.holdTicket(ticket.ID, onHoldId);
     }
   } catch (error) {
     console.error("failed to hold ticket: ", error);
@@ -114,7 +150,7 @@ export async function listTaskActions(args: listTaskActionParams) {
       ]
     })
 
-    const columns = resp.issues.map((issue) => {
+    const columns: TicketColumn[] = resp.issues.map((issue) => {
       const sorted = issue.changelog.histories
       .filter(history => history.items[0]?.field === "status")
       .sort((a, b) => moment(a.created).unix() - moment(b.created).unix())
@@ -205,12 +241,12 @@ export async function listTaskActions(args: listTaskActionParams) {
       const isEstimationExceeded = column.InProgressDuration >= targetFinish;
 
       if (!column.ActualStoryPoint) {
-        onCheckPullRequest(column.ID, pulls);
+        onCheckPullRequest(column, pulls);
       }
 
       if (isEstimationExceeded) {
         notify(column.ID, column.Title + '\n Please Change Your Ticket Status !!!', "critical");
-        handleHoldticket(column.ID, pulls, isEstimationExceeded);
+        handleHoldticket(column, pulls);
       }
 
       if (!notificationIds.has(column.ID)) {

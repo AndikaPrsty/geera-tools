@@ -92,7 +92,7 @@ export default class JQLApiRepository {
   }
 
   async getOpenPullRequestByTicketId() {
-    const resp = await this.octo.client.request("GET /repos/{owner}/{repo}/pulls?page=1&per_page=200", {
+    const resp = await this.octo.client.request("GET /repos/{owner}/{repo}/pulls?page=1&per_page=400", {
       owner: "Lionparcel",
       repo: "medusa"
     })
