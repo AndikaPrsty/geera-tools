@@ -40,11 +40,7 @@ const onCheckPullRequest = async (ticket: TicketColumn, pulls: Pull[]) => {
     // const jiraRepo = new JQLApiRepository();
     const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticket.ID+'\\b')))
     if (pullFiltered.length) {
-      await handleCodeReviewTicket(ticket.ID)
-      if (pullFiltered[0].merged_at && ticket.ActualStoryPoint) {
-        await handleDoneTicket(ticket.ID);
-        return true;
-      }
+      await handleCodeReviewTicket(ticket, pullFiltered[0])
       // const messagePayload = {
       //   content: "@here Hi everyone! Please review these PRs.",
       //   username: "Budak Faridho",
@@ -75,14 +71,15 @@ const onCheckPullRequest = async (ticket: TicketColumn, pulls: Pull[]) => {
   }
 }
 
-const handleCodeReviewTicket = async (ticketId = "") => {
+const handleCodeReviewTicket = async (ticket: TicketColumn, pull: Pull) => {
   try {
     const jiraRepo = new JQLApiRepository();
-    const statuses = await jiraRepo.getTransitionByTicketId(ticketId)
+    const statuses = await jiraRepo.getTransitionByTicketId(ticket.ID)
     const codeReviewId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/review/))?.id
 
     if (codeReviewId) {
-      await jiraRepo.codeReviewTicket(ticketId, codeReviewId);
+      await jiraRepo.codeReviewTicket(ticket.ID, codeReviewId);
+      if (pull.merged_at && ticket.ActualStoryPoint) await handleDoneTicket(ticket.ID);
       return true;
     }
     return false;
