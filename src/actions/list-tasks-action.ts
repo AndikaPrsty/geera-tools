@@ -71,7 +71,7 @@ const onCheckPullRequest = async (ticket: TicketColumn, pulls: Pull[]) => {
   }
 }
 
-const handleCodeReviewTicket = async (ticket: TicketColumn, pull: Pull) => {
+const handleCodeReviewTicket = async (ticket: TicketColumn, _pull: Pull) => {
   try {
     const jiraRepo = new JQLApiRepository();
     const statuses = await jiraRepo.getTransitionByTicketId(ticket.ID)
@@ -79,7 +79,7 @@ const handleCodeReviewTicket = async (ticket: TicketColumn, pull: Pull) => {
 
     if (codeReviewId) {
       await jiraRepo.codeReviewTicket(ticket.ID, codeReviewId);
-      if (pull.merged_at && ticket.ActualStoryPoint) await handleDoneTicket(ticket.ID);
+      // if (pull.merged_at && ticket.ActualStoryPoint) await handleDoneTicket(ticket.ID);
       return true;
     }
     return false;
@@ -89,22 +89,22 @@ const handleCodeReviewTicket = async (ticket: TicketColumn, pull: Pull) => {
   }
 }
 
-const handleDoneTicket = async (ticketId = "") => {
-  try {
-    const jiraRepo = new JQLApiRepository();
-    const statuses = await jiraRepo.getTransitionByTicketId(ticketId)
-    const doneId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/done/))?.id
-
-    if (doneId) {
-      await jiraRepo.codeReviewTicket(ticketId, doneId);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error("failed to done ticket: ", error);
-    return false;
-  }
-}
+// const handleDoneTicket = async (ticketId = "") => {
+//   try {
+//     const jiraRepo = new JQLApiRepository();
+//     const statuses = await jiraRepo.getTransitionByTicketId(ticketId)
+//     const doneId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/done/))?.id
+//
+//     if (doneId) {
+//       await jiraRepo.codeReviewTicket(ticketId, doneId);
+//       return true;
+//     }
+//     return false;
+//   } catch (error) {
+//     console.error("failed to done ticket: ", error);
+//     return false;
+//   }
+// }
 
 const handleHoldticket = async (ticket: TicketColumn, pulls: Pull[] = []) => {
   try {
