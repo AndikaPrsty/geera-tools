@@ -49,6 +49,19 @@ export default class JQLApiRepository {
     return resp.data as Issues
   }
 
+  async getBugs(issues = "") {
+    const resp = await this.service.client.get("/search/jql", {
+      params: {
+        fields: "assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype",
+        expand: "changelog",
+        maxResults: 5000,
+        jql: `Key in(${issues})`
+      }
+    })
+
+    return resp.data as Issues
+  }
+
   async getTransitionByTicketId(ticketId = ""): Promise<Transitions> {
     const resp = await this.service.client.get(
       `/issue/${ticketId}/transitions`

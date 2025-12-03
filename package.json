@@ -40,7 +40,6 @@
   "author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
   "license": "Apache-2.0",
   "dependencies": {
-  "dotenv": "^16.3.1",
     "@inquirer/prompts": "^7.9.0",
     "@octokit/core": "^7.0.5",
     "@types/blessed": "^0.1.25",
@@ -49,6 +48,8 @@
     "cli-table3": "^0.6.5",
     "commander": "^14.0.1",
     "discord.js": "^14.23.2",
+    "dotenv": "^16.3.1",
+    "exceljs": "^4.4.0",
     "ink": "^6.4.0",
     "keytar": "^7.9.0",
     "moment": "^2.30.1",

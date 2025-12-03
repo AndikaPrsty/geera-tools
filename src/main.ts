@@ -2,8 +2,9 @@
 import "dotenv/config";
 
 import { listBugActions } from "./actions/list-bugs-actions.js";
-import { confirm, number, select } from "@inquirer/prompts";
+import { confirm, number, select, input } from "@inquirer/prompts";
 import { listTaskActions } from "./actions/list-tasks-action.js";
+import { getBugs } from "./actions/update-sheets.js";
 
 const start = () => {
   const answer = select({
@@ -18,6 +19,11 @@ const start = () => {
         name: "list tasks",
         value: "tasks",
         description: "get list of tasks"
+      },
+      {
+        name: "update bugs sheet",
+        value: "update-bugs-sheet",
+        description: "to update in progress at and ready to test at"
       }
     ]
   })
@@ -59,7 +65,14 @@ const start = () => {
         })
 
         if (!watch) start();
-      break;
+        break;
+      case "update-bugs-sheet":
+        const issues = await input({
+          message: `please input your issues, with quote and separated by comma, ex: "WB-321"`
+        })
+
+        await getBugs(issues);
+        break;
     }
   });
 }
