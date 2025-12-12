@@ -39,7 +39,7 @@ export default class JQLApiRepository {
       params: {
         fields: "assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype",
         expand: "changelog",
-        jql: `assignee in(64103adf7222b08f3e705ecf) and created >= 2025-10-01 and created <= 2025-12-30 and status in('In Progress')`,
+        jql: `assignee in(64103adf7222b08f3e705ecf) and created >= 2025-10-01 and created <= 2025-12-30 and status in('In Progress', HOLD)`,
       }
     })
 

@@ -19,6 +19,7 @@ interface TableDataInterface {
 	assignee: string;
 	storyPoint: string;
 	inProgressTime: string;
+	status: string;
 }
 
 type StatusDuration = {
@@ -41,7 +42,6 @@ export default function Progress({options}: Props) {
 	const [loading, setLoading] = useState(true);
 	const [tableData, setTableData] = useState<any[]>([]);
 	const [timer, setTimer] = useState("");
-	const [pulls, setPulls] = useState<Pull[]>([]);
 	const [notificationIds, setNotificationIds] = useState(new Map())
 	const [retryInterval, setRetryInterval] = useState<any>(null);
 
@@ -78,15 +78,15 @@ export default function Progress({options}: Props) {
 		}
 	}
 
-	const handleHoldticket = async (ticket: TableDataInterface) => {
+	const handleHoldticket = async (ticket: TableDataInterface, pulls: Pull[]) => {
 		try {
-			const isCodeReview = await onCheckPullRequest(ticket);
+			const isCodeReview = await onCheckPullRequest(ticket, pulls);
 			const statuses = await JQLRepo.getTransitionByTicketId(ticket.key)
 			const onHoldId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/hold/))?.id
 
 			if (isCodeReview) return;
 
-			if (onHoldId) {
+			if (onHoldId && ticket.status.toLowerCase().includes("progress")) {
 				await JQLRepo.holdTicket(ticket.key, onHoldId);
 			}
 		} catch (error) {
@@ -94,11 +94,37 @@ export default function Progress({options}: Props) {
 		}
 	}
 
-	const onCheckPullRequest = async (ticket: TableDataInterface) => {
+	const handleCodeReviewFromHoldTicket = async (ticket: TableDataInterface, pull: Pull) => {
+		try {
+			let statuses = await JQLRepo.getTransitionByTicketId(ticket.key)
+			const inProgressId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/progress/))?.id;
+
+			if (inProgressId) {
+				await JQLRepo.codeReviewTicket(ticket.key, inProgressId)
+
+				statuses = await JQLRepo.getTransitionByTicketId(ticket.key)
+				const codeReviewId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/review/))?.id
+
+				if (codeReviewId) {
+					await JQLRepo.codeReviewTicket(ticket.key, codeReviewId);
+					if (pull.merged_at && ticket.storyPoint) await handleDoneTicket(ticket.key);
+					return true;
+				}
+				return true;
+			}
+			return false;
+		} catch (error) {
+			console.error("failed to review ticket: ", error);
+			return false;
+		}
+	}
+
+	const onCheckPullRequest = async (ticket: TableDataInterface, pulls: Pull[]) => {
 		try {
 			const pullFiltered = pulls.filter((pull: any) => ["closed", "open"].includes(pull.state)).filter((pull: any) => pull.title.match(new RegExp('\\b'+ticket.key+'\\b')))
 			if (pullFiltered.length) {
-				await handleCodeReviewTicket(ticket, pullFiltered[0]!)
+				if (ticket.status.toLowerCase().includes("hold")) handleCodeReviewFromHoldTicket(ticket, pullFiltered[0]!)
+				else await handleCodeReviewTicket(ticket, pullFiltered[0]!)
 				return true
 			}
 			return false
@@ -115,7 +141,6 @@ export default function Progress({options}: Props) {
 			const pullResp = await OctoRepo.getPullRequests()
 			const resp = await JQLRepo.onGoingTasks();
 
-			setPulls(pullResp);
 
 			const data = resp.issues.map((issue) => {
 				const sorted = issue.changelog.histories
@@ -178,6 +203,7 @@ export default function Progress({options}: Props) {
 					summary: issue.fields.summary,
 					assignee: issue.fields.assignee.displayName,
 					storyPoint: issue.fields.customfield_10024?.toString() || "",
+					status: issue.fields.status.name,
 					inProgressTime: durationReadeble
 				} as TableDataInterface
 
@@ -190,12 +216,12 @@ export default function Progress({options}: Props) {
 				const isEstimationExceeded = inProgressDuration >= targetFinish;
 
 				if (!storyPoint) {
-					onCheckPullRequest(data);
+					onCheckPullRequest(data, pullResp);
 				}
 
 				if (isEstimationExceeded) {
 					notify(data.key, data.summary + '\n Please Change Your Ticket Status !!!', "critical");
-					handleHoldticket(data);
+					handleHoldticket(data, pullResp);
 				}
 
 				if (!notificationIds.has(data.key)) {
@@ -228,7 +254,7 @@ export default function Progress({options}: Props) {
 				fetchInprogressTask();
 			}, options.interval * 1000)
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 			const retryIntrvl = setInterval(() => {
 				fetchInprogressTask();
 			}, 10*1000) // retry every 10 sec if error
