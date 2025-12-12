@@ -104,6 +104,17 @@ export default function Feature({options}: Props) {
 				)
 			}
 		},
+		{
+			title: `Generating ${options.feature}Controller.ts`,
+			async task() {
+				const dIPath = path.resolve(projectDirectoryPath, "src/app/ui/controllers")
+				await copyWithTemplate(
+					fromPath("Controller.ts.tpl"),
+					toPath(dIPath, options.feature + 'Controller.ts'),
+					options.feature
+				)
+			}
+		},
 	])
 
 	useEffect(() => {
