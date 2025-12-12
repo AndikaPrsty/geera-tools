@@ -43,6 +43,7 @@ export default function Progress({options}: Props) {
 	const [timer, setTimer] = useState("");
 	const [pulls, setPulls] = useState<Pull[]>([]);
 	const [notificationIds, setNotificationIds] = useState(new Map())
+	const [retryInterval, setRetryInterval] = useState<any>(null);
 
 	const handleDoneTicket = async (ticketId = "") => {
 		try {
@@ -108,6 +109,7 @@ export default function Progress({options}: Props) {
 	}
 
 	const fetchInprogressTask = async () => {
+		clearInterval(retryInterval);
 		try {
 			setLoading(true);
 			const pullResp = await OctoRepo.getPullRequests()
@@ -181,7 +183,7 @@ export default function Progress({options}: Props) {
 
 
 				const storyPoint = issue.fields.customfield_10024;
-				const threshold = 60;
+				const threshold = 80;
 
 				const targetFinish = Number(storyPoint || 1) * threshold;
 
@@ -227,12 +229,17 @@ export default function Progress({options}: Props) {
 			}, options.interval * 1000)
 		} catch (error) {
 			console.log(error)
+			const retryIntrvl = setInterval(() => {
+				fetchInprogressTask();
+			}, 10*1000) // retry every 10 sec if error
+			setRetryInterval(retryIntrvl);
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	useEffect(() => {
+		console.clear();
 		fetchInprogressTask();
 	}, [])
 
