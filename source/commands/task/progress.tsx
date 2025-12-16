@@ -44,6 +44,7 @@ export default function Progress({options}: Props) {
 	const [timer, setTimer] = useState("");
 	const [notificationIds, setNotificationIds] = useState(new Map())
 	const [retryInterval, setRetryInterval] = useState<any>(null);
+	const [timeoutId, setTimeoutId] = useState<any>(null);
 
 	const handleDoneTicket = async (ticketId = "") => {
 		try {
@@ -65,6 +66,12 @@ export default function Progress({options}: Props) {
 		try {
 			const statuses = await JQLRepo.getTransitionByTicketId(ticket.key)
 			const codeReviewId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/review/))?.id
+
+			if (ticket.status.toLowerCase().includes("review")) {
+				const doneId = statuses.transitions.find((transition) => transition.name.toLowerCase().match(/done/))?.id
+				if (doneId && pull.merged_at && ticket.storyPoint) await handleDoneTicket(ticket.key)
+				return true;
+			}
 
 			if (codeReviewId) {
 				await JQLRepo.codeReviewTicket(ticket.key, codeReviewId);
@@ -135,7 +142,8 @@ export default function Progress({options}: Props) {
 	}
 
 	const fetchInprogressTask = async () => {
-		clearInterval(retryInterval);
+		if (retryInterval) clearInterval(retryInterval);
+		if (timeoutId) clearTimeout(timeoutId)
 		try {
 			setLoading(true);
 			const pullResp = await OctoRepo.getPullRequests()
@@ -220,7 +228,9 @@ export default function Progress({options}: Props) {
 				}
 
 				if (isEstimationExceeded) {
-					notify(data.key, data.summary + '\n Please Change Your Ticket Status !!!', "critical");
+					if (data.status.toLowerCase().includes("progress")) {
+						notify(data.key, data.summary + '\n Please Change Your Ticket Status !!!', "critical");
+					}
 					handleHoldticket(data, pullResp);
 				}
 
@@ -249,12 +259,13 @@ export default function Progress({options}: Props) {
 				setTimer(moment(diff).format("mm:ss"))
 			}, 100)
 
-			setTimeout(() => {
+			const timeoutId = setTimeout(() => {
 				clearInterval(intervalId);
 				fetchInprogressTask();
 			}, options.interval * 1000)
+			setTimeoutId(timeoutId)
 		} catch (error) {
-			console.error(error)
+			if (timeoutId) clearTimeout(timeoutId);
 			const retryIntrvl = setInterval(() => {
 				fetchInprogressTask();
 			}, 10*1000) // retry every 10 sec if error
