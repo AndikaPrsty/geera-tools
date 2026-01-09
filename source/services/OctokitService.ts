@@ -1,10 +1,9 @@
-import { Octokit } from "@octokit/core"
+import {Octokit} from '@octokit/core';
 
 export class OctokitService {
-  client: Octokit;
+	client: Octokit;
 
-  constructor() {
-    this.client = new Octokit({auth: process.env["GITHUB_TOKEN"]})
-  }
+	constructor() {
+		this.client = new Octokit({auth: process.env['GITHUB_TOKEN']});
+	}
 }
-
