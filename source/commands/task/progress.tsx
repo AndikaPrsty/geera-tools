@@ -46,7 +46,7 @@ export default function Progress({options}: Props) {
 		};
 	}, [startFetching, cleanupTimers]);
 
-	if (state.loading) {
+	if (state.loading && !state.tableData.length) {
 		return <Text>loading...</Text>;
 	}
 
@@ -61,7 +61,7 @@ export default function Progress({options}: Props) {
 
 	return (
 		<Box flexDirection="column">
-			{options.watch ? <Text>refetching in {state.timer}</Text> : null}
+			{state.loading ? <Text>loading...</Text> : options.watch ? <Text>refetching in {state.timer}</Text> : null}
 			<Table data={state.tableData} />
 		</Box>
 	);

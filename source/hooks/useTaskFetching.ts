@@ -77,7 +77,12 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 			if (STATUS_PATTERNS.PROGRESS.test(data.status)) {
 				notify(data.key, data.summary + '\n Please Change Your Ticket Status !!!', 'critical');
 			}
-			await handleHoldTicket(data);
+
+			const {hasValidPR} = await checkPullRequest(data, pulls);
+
+			if (!hasValidPR) {
+				await handleHoldTicket(data);
+			}
 		}
 
 		// Track notifications to avoid duplicates
@@ -102,7 +107,7 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 	const fetchInProgressTasks = useCallback(async (): Promise<void> => {
 		// Clear existing timers first
 		clearAllTimers();
-		
+
 		try {
 			setState(prev => ({ ...prev, loading: true }));
 
@@ -144,13 +149,13 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 			}
 		} catch (error) {
 			console.error('Failed to fetch tasks:', error);
-			
+
 			// Setup retry mechanism only if not already retrying
 			if (!retryIntervalRef.current) {
 				const retry = setInterval(() => {
 					void fetchInProgressTasks();
 				}, TASK_CONSTANTS.RETRY_INTERVAL_MS);
-				
+
 				retryIntervalRef.current = retry;
 			}
 		} finally {
@@ -164,7 +169,6 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 	}, [clearAllTimers]);
 
 	const startFetching = useCallback(() => {
-		console.clear();
 		void fetchInProgressTasks();
 	}, [fetchInProgressTasks]);
 
