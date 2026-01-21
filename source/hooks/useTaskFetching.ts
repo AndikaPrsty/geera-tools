@@ -29,7 +29,7 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 	});
 
 	const { checkPullRequest } = usePullRequestCheck();
-	const { handleHoldTicket, handleCodeReviewTicket } = useTicketOperations();
+	const { handleHoldTicket } = useTicketOperations();
 	const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const watchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const retryIntervalRef = useRef<NodeJS.Timeout | null>(null);
