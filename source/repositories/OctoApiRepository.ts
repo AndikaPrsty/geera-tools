@@ -19,4 +19,16 @@ export default class OctoApiRepository {
 
 		return resp.data as Pull[];
 	}
+
+	async getPullRequestsLiberta() {
+		const resp = await this.octo.client.request(
+			'GET /repos/{owner}/{repo}/pulls?page=1&per_page=400&direction=desc&state=all',
+			{
+				owner: 'Lionparcel',
+				repo: 'cms-customer',
+			},
+		);
+
+		return resp.data as Pull[];
+	}
 }

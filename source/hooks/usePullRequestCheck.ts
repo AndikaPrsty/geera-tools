@@ -31,7 +31,6 @@ export const usePullRequestCheck = () => {
 					if (STATUS_PATTERNS.HOLD.test(ticket.status)) {
 						await handleCodeReviewFromHold(ticket, pull);
 					} else {
-						console.log("here?")
 						await handleCodeReviewTicket(ticket, pull);
 					}
 

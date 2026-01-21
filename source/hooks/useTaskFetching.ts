@@ -29,7 +29,7 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 	});
 
 	const { checkPullRequest } = usePullRequestCheck();
-	const { handleHoldTicket } = useTicketOperations();
+	const { handleHoldTicket, handleCodeReviewTicket } = useTicketOperations();
 	const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const watchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const retryIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,7 +69,10 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 		const isEstimationExceeded = inProgressMinutes >= targetFinish;
 
 		// Handle notifications and actions
-		if (!storyPoint) {
+
+
+		// for bugs ticket
+		if (!storyPoint && !isEstimationExceeded) {
 			await checkPullRequest(data, pulls);
 		}
 
@@ -84,7 +87,6 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 				await handleHoldTicket(data);
 			}
 		}
-
 		// Track notifications to avoid duplicates
 		setState(prev => {
 			if (!prev.notificationIds.has(data.key)) {
@@ -111,13 +113,14 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 		try {
 			setState(prev => ({ ...prev, loading: true }));
 
-			const [pullResp, issuesResp] = await Promise.all([
+			const [pullResp, pullLibertaResp, issuesResp] = await Promise.all([
 				octoRepo.getPullRequests(),
+				octoRepo.getPullRequestsLiberta(),
 				jqlRepo.onGoingTasks(),
 			]);
 
 			const processedData = await Promise.all(
-				issuesResp.issues.map((issue: any) => processIssueData(issue, pullResp)),
+				issuesResp.issues.map((issue: any) => processIssueData(issue, pullResp.concat(pullLibertaResp))),
 			);
 
 			setState(prev => ({...prev, tableData: processedData}));

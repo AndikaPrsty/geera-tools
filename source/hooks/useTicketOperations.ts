@@ -74,7 +74,9 @@ export const useTicketOperations = () => {
 	);
 
 	const handleHoldTicket = useCallback(
-		async (ticket: TableDataInterface): Promise<TicketOperationResult> => {
+		async (
+			ticket: TableDataInterface,
+		): Promise<TicketOperationResult> => {
 			try {
 				const statuses = await jqlRepo.getTransitionByTicketId(ticket.key);
 				const onHoldId = statuses.transitions.find(transition =>
@@ -87,7 +89,7 @@ export const useTicketOperations = () => {
 				}
 
 				if (STATUS_PATTERNS.REVIEW) {
-					console.log("heloo")
+					// handleDoneTicket(ticket.key)
 				}
 
 				return {
