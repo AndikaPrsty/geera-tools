@@ -11,22 +11,27 @@ export const usePullRequestCheck = () => {
 	const {handleCodeReviewTicket, handleCodeReviewFromHold} =
 		useTicketOperations();
 
+	const getPullRequestByKey = (key = "", pulls: Pull[]) => {
+		const validStates = ['closed', 'open'];
+		return pulls
+		.filter(pull => validStates.includes(pull.state))
+		.filter(pull => ["development", "staging"].includes(pull.base.ref))
+		.find(pull => {
+			const regex = new RegExp(`\\b${key}\\b`);
+			return regex.test(pull.title);
+		});
+}
+
 	const checkPullRequest = useCallback(
 		async (
 			ticket: TableDataInterface,
 			pulls: Pull[],
 		): Promise<PullRequestCheck> => {
 			try {
-				const validStates = ['closed', 'open'];
-				const pullFiltered = pulls
-					.filter(pull => validStates.includes(pull.state))
-					.filter(pull => {
-						const regex = new RegExp(`\\b${ticket.key}\\b`);
-						return regex.test(pull.title);
-					});
+				const pullFiltered = getPullRequestByKey(ticket.key, pulls);;
 
-				if (pullFiltered.length > 0) {
-					const pull = pullFiltered[0]!;
+				if (pullFiltered) {
+					const pull = pullFiltered!;
 
 					if (STATUS_PATTERNS.HOLD.test(ticket.status)) {
 						await handleCodeReviewFromHold(ticket, pull);
@@ -46,5 +51,5 @@ export const usePullRequestCheck = () => {
 		[handleCodeReviewTicket, handleCodeReviewFromHold],
 	);
 
-	return {checkPullRequest};
+	return {checkPullRequest, getPullRequestByKey};
 };

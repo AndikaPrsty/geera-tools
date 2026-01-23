@@ -9,6 +9,7 @@ export interface TableDataInterface {
 	storyPoint: string;
 	inProgressTime: string;
 	status: string;
+	pullRequest: string;
 }
 
 export interface StatusDuration {

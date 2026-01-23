@@ -28,7 +28,7 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 		retryCount: 0
 	});
 
-	const { checkPullRequest } = usePullRequestCheck();
+	const { checkPullRequest, getPullRequestByKey } = usePullRequestCheck();
 	const { handleHoldTicket } = useTicketOperations();
 	const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const watchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -55,13 +55,15 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 		const statusDurations = calculateStatusDurations(issue.changelog.histories);
 		const { totalMinutes: inProgressMinutes, readableDuration } = calculateInProgressDuration(statusDurations);
 
+		const pullFiltered = getPullRequestByKey(issue.key, pulls);
 		const data: TableDataInterface = {
 			key: issue.key,
 			summary: issue.fields.summary,
 			assignee: issue.fields.assignee.displayName,
 			storyPoint: issue.fields.customfield_10024?.toString() || '',
 			status: issue.fields.status.name,
-			inProgressTime: readableDuration
+			inProgressTime: readableDuration,
+			pullRequest: pullFiltered?._links.html?.href || "-"
 		};
 
 		const storyPoint = issue.fields.customfield_10024;
@@ -150,8 +152,8 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 				timerIntervalRef.current = timerInterval;
 				watchTimeoutRef.current = nextFetchTimeout;
 			}
-		} catch (error) {
-			console.error('Failed to fetch tasks:', error);
+		} catch (error: any) {
+			console.error('Failed to fetch tasks:', error?.message || error);
 
 			// Setup retry mechanism only if not already retrying
 			if (!retryIntervalRef.current) {
