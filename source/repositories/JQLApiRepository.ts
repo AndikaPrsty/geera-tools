@@ -16,7 +16,7 @@ export default class JQLApiRepository {
 				fields:
 					'assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype',
 				expand: 'changelog',
-				jql: `assignee in(64103adf7222b08f3e705ecf) and issuetype = Bug and created <= now() ORDER BY created DESC`,
+				jql: `assignee in( currentUser() ) and issuetype = Bug and created <= now() ORDER BY created DESC`,
 			},
 		});
 
@@ -30,7 +30,7 @@ export default class JQLApiRepository {
 					'assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype',
 				expand: 'changelog',
 				maxResults: 10,
-				jql: `assignee in(64103adf7222b08f3e705ecf) and issuetype in("Sub-task Engineer") ORDER BY cf[10195] DESC, status DESC`,
+				jql: `assignee in( currentUser() ) and issuetype in("Sub-task Engineer") ORDER BY cf[10195] DESC, status DESC`,
 			},
 		});
 
@@ -43,7 +43,7 @@ export default class JQLApiRepository {
 				fields:
 					'assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype',
 				expand: 'changelog',
-				jql: `assignee in(64103adf7222b08f3e705ecf) and created >= 2025-10-01 and created <= ${moment()
+				jql: `assignee in( currentUser() ) and created >= 2025-10-01 and created <= ${moment()
 					.endOf('month')
 					.format(
 						'YYYY-MM-DD',
