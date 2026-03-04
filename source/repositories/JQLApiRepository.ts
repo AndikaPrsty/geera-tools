@@ -43,7 +43,7 @@ export default class JQLApiRepository {
 				fields:
 					'assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype',
 				expand: 'changelog',
-				jql: `assignee in( currentUser() ) and created >= 2025-10-01 and created <= ${moment()
+				jql: `assignee in( currentUser() ) AND NOT issuetype in(Story, Epic) and created >= 2025-10-01 and created <= ${moment()
 					.endOf('month')
 					.format(
 						'YYYY-MM-DD',
