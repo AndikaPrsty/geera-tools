@@ -15,7 +15,7 @@ export const usePullRequestCheck = () => {
 		const validStates = ['closed', 'open'];
 		return pulls
 		.filter(pull => validStates.includes(pull.state))
-		.filter(pull => ["development", "staging", "develop"].includes(pull.base.ref))
+		.filter(pull => ["development", "staging", "develop", "inter-development"].includes(pull.base.ref))
 		.find(pull => {
 			const regex = new RegExp(`\\b${key}\\b`);
 			return regex.test(pull.title);
