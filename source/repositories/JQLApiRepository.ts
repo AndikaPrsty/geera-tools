@@ -1,4 +1,3 @@
-import moment from 'moment';
 import {Issues} from '../contracts/Issues.js';
 import {Transitions} from '../contracts/Transition.js';
 import ApiService from '../services/ApiService.js';
@@ -43,11 +42,7 @@ export default class JQLApiRepository {
 				fields:
 					'assignee,customfield_10024,statusCategory,summary,status,changelog,issuetype',
 				expand: 'changelog',
-				jql: `assignee in( currentUser() ) AND NOT issuetype in(Story, Epic) and created >= 2025-10-01 and created <= ${moment()
-					.endOf('month')
-					.format(
-						'YYYY-MM-DD',
-					)} and status in('In Progress', HOLD, "Code Review")`,
+				jql: `assignee in( currentUser() ) AND NOT issuetype in(Story, Epic) and created >= startOfYear() and status in('In Progress', HOLD, "Code Review")`,
 			},
 		});
 
