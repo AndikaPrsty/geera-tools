@@ -115,14 +115,15 @@ export const useTaskFetching = ({ watch, interval }: UseTaskFetchingProps) => {
 		try {
 			setState(prev => ({ ...prev, loading: true }));
 
-			const [pullResp, pullLibertaResp, issuesResp] = await Promise.all([
+			const [pullResp, pullLibertaResp, pullAgoraResp, issuesResp] = await Promise.all([
 				octoRepo.getPullRequests(),
 				octoRepo.getPullRequestsLiberta(),
+				octoRepo.getPullRequestsAgora(),
 				jqlRepo.onGoingTasks(),
 			]);
 
 			const processedData = await Promise.all(
-				issuesResp.issues.map((issue: any) => processIssueData(issue, pullResp.concat(pullLibertaResp))),
+				issuesResp.issues.map((issue: any) => processIssueData(issue, pullResp.concat(pullLibertaResp.concat(pullAgoraResp)))),
 			);
 
 			setState(prev => ({...prev, tableData: processedData}));
